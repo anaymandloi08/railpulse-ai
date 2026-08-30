@@ -37,10 +37,10 @@ export const RailwayMap: React.FC<RailwayMapProps> = ({
       attributionControl: false
     });
 
-    // Dark Carto Tile Layer (with standard OSM fallback)
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      subdomains: 'abcd',
-      maxZoom: 19
+    // Watermark-Free High Contrast Dark Map Tiles (ArcGIS Dark Gray / OpenStreetMap)
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 16,
+      attribution: 'Esri, DeLorme, NAVTEQ'
     }).addTo(map);
 
     // Draw Corridors
