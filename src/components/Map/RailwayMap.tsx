@@ -109,7 +109,7 @@ export const RailwayMap: React.FC<RailwayMapProps> = ({
     };
   }, []);
 
-  // 2. Update Train Markers on live simulation tick (Selected train is visually dominant)
+  // 2. Update Train Markers on live simulation tick (Clean, no obstructive duplicate popup)
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
@@ -133,15 +133,15 @@ export const RailwayMap: React.FC<RailwayMapProps> = ({
         borderColor = '#94a3b8';
       }
 
-      // Dominant styling for selected train
+      // Dominant styling for selected train with train number chip
       const iconHtml = `
-        <div style="position: relative; width: ${isSelected ? '44px' : '32px'}; height: ${isSelected ? '44px' : '32px'}; display: flex; align-items: center; justify-content: center; cursor: pointer; opacity: ${isSelected ? '1' : '0.75'}; transition: all 0.3s ease;">
-          ${isSelected ? '<div class="pulse-ring" style="position: absolute; width: 54px; height: 54px; border-radius: 50%; background-color: rgba(56, 189, 248, 0.3); border: 2px solid #38bdf8;"></div>' : ''}
-          ${isHighDelay && !isSelected ? '<div style="position: absolute; width: 38px; height: 38px; border-radius: 50%; background-color: rgba(239, 68, 68, 0.35); border: 1px solid #ef4444;"></div>' : ''}
+        <div style="position: relative; width: ${isSelected ? '44px' : '30px'}; height: ${isSelected ? '44px' : '30px'}; display: flex; align-items: center; justify-content: center; cursor: pointer; opacity: ${isSelected ? '1' : '0.75'}; transition: all 0.3s ease;">
+          ${isSelected ? '<div class="pulse-ring" style="position: absolute; width: 54px; height: 54px; border-radius: 50%; background-color: rgba(56, 189, 248, 0.35); border: 2px solid #38bdf8;"></div>' : ''}
+          ${isHighDelay && !isSelected ? '<div style="position: absolute; width: 36px; height: 36px; border-radius: 50%; background-color: rgba(239, 68, 68, 0.35); border: 1px solid #ef4444;"></div>' : ''}
           
           <div style="
-            width: ${isSelected ? '36px' : '26px'}; 
-            height: ${isSelected ? '36px' : '26px'}; 
+            width: ${isSelected ? '36px' : '24px'}; 
+            height: ${isSelected ? '36px' : '24px'}; 
             border-radius: 50%; 
             background: ${bgColor}; 
             border: ${isSelected ? '2.5px solid #ffffff' : '1.5px solid ' + borderColor}; 
@@ -152,7 +152,7 @@ export const RailwayMap: React.FC<RailwayMapProps> = ({
             transform: rotate(${train.heading}deg);
             transition: transform 0.4s ease;
           ">
-            <svg width="${isSelected ? '20' : '14'}" height="${isSelected ? '20' : '14'}" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="${isSelected ? '20' : '12'}" height="${isSelected ? '20' : '12'}" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="m12 2 8 8-8 8-8-8z"/>
               <path d="M12 2v20"/>
             </svg>
@@ -180,9 +180,8 @@ export const RailwayMap: React.FC<RailwayMapProps> = ({
       const trainIcon = L.divIcon({
         html: iconHtml,
         className: 'train-marker-icon',
-        iconSize: isSelected ? [44, 44] : [32, 32],
-        iconAnchor: isSelected ? [22, 22] : [16, 16],
-        popupAnchor: [0, -20]
+        iconSize: isSelected ? [44, 44] : [30, 30],
+        iconAnchor: isSelected ? [22, 22] : [15, 15]
       });
 
       let marker = markersRef.current.get(train.id);
@@ -198,31 +197,6 @@ export const RailwayMap: React.FC<RailwayMapProps> = ({
         if (isSelected) marker.setZIndexOffset(1000);
         else marker.setZIndexOffset(100);
       }
-
-      const popupHtml = `
-        <div style="padding: 4px; max-width: 240px; font-family: sans-serif; color: #fff;">
-          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 4px; margin-bottom: 6px;">
-            <span style="font-family: monospace; font-weight: 900; color: #38bdf8; font-size: 13px;">
-              TRAIN ${train.number}
-            </span>
-            <span style="background: #1e293b; color: #94a3b8; font-size: 9px; font-weight: bold; padding: 2px 6px; border-radius: 4px;">
-              ${train.category}
-            </span>
-          </div>
-          <div style="font-weight: bold; font-size: 11px; margin-bottom: 4px;">${train.name}</div>
-          <div style="font-size: 10px; color: #94a3b8; margin-bottom: 6px;">${train.origin} &rarr; ${train.destination}</div>
-          <div style="background: #090d16; padding: 6px; border-radius: 6px; border: 1px solid #1e293b; font-size: 10px; line-height: 1.5;">
-            <div>Current: <b style="color: #f1f5f9;">${train.currentStation}</b></div>
-            <div>Next: <b style="color: #f1f5f9;">${train.nextStation}</b></div>
-            <div>Scheduled: <b style="color: #cbd5e1;">${train.scheduledETA}</b></div>
-            <div style="color: #38bdf8;">Dynamic ETA: <b>${train.aiPredictedETA}</b></div>
-            <div style="color: ${train.delayMinutes > 30 ? '#f43f5e' : train.delayMinutes > 5 ? '#f59e0b' : '#34d399'}; font-weight: bold;">
-              Delay: ${train.delayMinutes > 0 ? `+${train.delayMinutes}m` : 'ON TIME'} (${train.aiInsights.confidence}% conf)
-            </div>
-          </div>
-        </div>
-      `;
-      marker.bindPopup(popupHtml);
     });
   }, [trains, selectedTrain?.id, onSelectTrain]);
 
@@ -259,11 +233,11 @@ export const RailwayMap: React.FC<RailwayMapProps> = ({
       {/* Map DOM Element */}
       <div ref={mapContainerRef} className="w-full h-full" style={{ background: '#0a0e1a' }} />
 
-      {/* Legend Overlay */}
+      {/* Clean Map Legend with "LIVE TRAIN POSITION" */}
       <div className="absolute bottom-4 right-4 z-[400] bg-slate-950/90 backdrop-blur-md border border-slate-800 rounded-xl p-3 text-xs text-slate-300 shadow-2xl space-y-2 hidden md:block max-w-xs pointer-events-auto">
         <div className="font-bold text-white text-[11px] uppercase tracking-wider flex items-center justify-between border-b border-slate-800 pb-1">
           <span>Corridor Track Legend</span>
-          <span className="text-[10px] text-blue-400">Live GPS</span>
+          <span className="text-[10px] text-blue-400 font-mono">LIVE TRAIN POSITION</span>
         </div>
 
         <div className="grid grid-cols-2 gap-2 text-[11px]">

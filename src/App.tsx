@@ -297,7 +297,7 @@ export const App: React.FC = () => {
             <span className="font-mono font-black text-amber-400 text-sm">+{avgDelay} min</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-slate-400 uppercase font-bold text-[10px]">Validation MAE:</span>
+            <span className="text-slate-400 uppercase font-bold text-[10px]">ETA Accuracy:</span>
             <span className="font-mono font-black text-cyan-400 text-sm">&plusmn;1.4 min <span className="text-[10px] text-slate-400 font-normal">(91% Conf)</span></span>
           </div>
         </div>
@@ -312,7 +312,7 @@ export const App: React.FC = () => {
                 <div className="p-3 border-b border-slate-800 space-y-2 bg-slate-900/60">
                   <div className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center justify-between">
                     <span>Select Train ({filteredTrains.length})</span>
-                    <span className="text-[10px] text-blue-400 font-mono">Live GPS</span>
+                    <span className="text-[10px] text-blue-400 font-mono">LIVE TRAIN POSITION</span>
                   </div>
                   <input
                     type="text"
