@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { StationSector, StationIncident, LiveActivityEvent, StationHealthData, MapDisplayMode } from '../../types/stationCommand';
+import { Train } from '../../types/railway';
 import { StationCommandHeader } from './StationCommandHeader';
 import { InteractiveStationMap } from './InteractiveStationMap';
 import { PriorityActionPanel } from './PriorityActionPanel';
@@ -10,6 +11,7 @@ import { StationSectorDrawer } from './StationSectorDrawer';
 interface StationCommandCockpitProps {
   sectors: StationSector[];
   incidents: StationIncident[];
+  trains: Train[];
   health: StationHealthData;
   events: LiveActivityEvent[];
   onResolveWithOtp: (incidentId: string) => void;
@@ -19,6 +21,7 @@ interface StationCommandCockpitProps {
 export const StationCommandCockpit: React.FC<StationCommandCockpitProps> = ({
   sectors,
   incidents,
+  trains,
   health,
   events,
   onResolveWithOtp,
@@ -30,25 +33,24 @@ export const StationCommandCockpit: React.FC<StationCommandCockpitProps> = ({
   const [selectedIncidentForOtp, setSelectedIncidentForOtp] = useState<StationIncident | null>(null);
 
   const criticalAlertsCount = incidents.filter(i => i.severity === 'CRITICAL' && i.status !== 'RESOLVED').length;
-  const activeIncidentsCount = incidents.filter(i => i.status !== 'RESOLVED').length;
 
   return (
     <div className="flex flex-col h-full w-full bg-slate-950 relative overflow-hidden">
       
-      {/* 1. Header with 5 focused KPIs */}
+      {/* 1. Top Bar: 4 Clean KPIs + Station Selector */}
       <StationCommandHeader
         selectedStation={selectedStation}
         setSelectedStation={setSelectedStation}
-        health={health}
         criticalAlertsCount={criticalAlertsCount}
-        activeIncidentsCount={activeIncidentsCount}
-        aiActionsCount={13}
+        avgDelayMinutes={8}
+        crowdLevelPct={health.crowdHealth}
+        activeTrainsCount={24}
       />
 
-      {/* 2. Main Middle View: Interactive Map (Hero) + Priority Action Panel */}
+      {/* 2. Visual Hierarchy: 55-60% Map on Left + Priority/Prediction on Right */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
         
-        {/* Main Station Map (Takes Left/Center Prominence) */}
+        {/* Main Station Map (Hero) */}
         <InteractiveStationMap
           sectors={sectors}
           incidents={incidents}
@@ -60,10 +62,11 @@ export const StationCommandCockpit: React.FC<StationCommandCockpitProps> = ({
           onTriggerCrowdDivert={onTriggerCrowdDivert}
         />
 
-        {/* Right Flank: Priority Alerts Queue & AI Recommendation */}
+        {/* Right Flank: Priority Alerts Queue + Delay Prediction Card + AI Insight Box */}
         <PriorityActionPanel
           sectors={sectors}
           incidents={incidents}
+          trains={trains}
           onOpenIncidentModal={(inc) => setSelectedIncidentForOtp(inc)}
           onSelectSector={(sec) => setSelectedSector(sec)}
           onTriggerCrowdDivert={onTriggerCrowdDivert}
@@ -71,7 +74,7 @@ export const StationCommandCockpit: React.FC<StationCommandCockpitProps> = ({
 
       </div>
 
-      {/* 3. Bottom Live Activity Stream Ticker */}
+      {/* 3. Bottom Live Activity Timeline */}
       <LiveActivityTicker events={events} />
 
       {/* OTP Verification Modal */}

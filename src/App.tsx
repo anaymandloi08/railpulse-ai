@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Component, ErrorInfo, ReactNode } from 'react';
+﻿import React, { useState, useEffect, Component, ErrorInfo, ReactNode } from 'react';
 import { Train, Alert } from './types/railway';
 import { INITIAL_TRAINS, INITIAL_ALERTS } from './data/mockTrains';
 import { 
@@ -136,7 +136,7 @@ export const App: React.FC = () => {
       return inc;
     }));
 
-    // Update Station Health (+6 score boost)
+    // Update Station Health
     setStationHealth(prev => ({
       ...prev,
       overallScore: Math.min(99, prev.overallScore + 6),
@@ -144,11 +144,10 @@ export const App: React.FC = () => {
       incidentResolution: Math.min(100, prev.incidentResolution + 12)
     }));
 
-    // Append to live activity stream
     const now = new Date();
     const timeStr = now.toLocaleTimeString('en-IN', { hour12: false, hour: '2-digit', minute: '2-digit' });
     setEvents(prev => [
-      { id: `EVT-${Date.now()}`, time: timeStr, type: 'NORMAL', message: `Incident ${incidentId} successfully resolved via Passenger OTP verification` },
+      { id: `EVT-${Date.now()}`, time: timeStr, type: 'NORMAL', message: `Incident ${incidentId} marked resolved via Passenger OTP verification` },
       ...prev.slice(0, 7)
     ]);
   };
@@ -176,7 +175,6 @@ export const App: React.FC = () => {
       return sec;
     }));
 
-    // Station Health boost
     setStationHealth(prev => ({
       ...prev,
       overallScore: Math.min(96, prev.overallScore + 8),
@@ -191,7 +189,6 @@ export const App: React.FC = () => {
     ]);
   };
 
-  // Handlers for Fleet mode
   const handleSelectTrain = (train: Train) => setSelectedTrain(train);
   const handleOpenDetails = (train: Train) => {
     setSelectedTrain(train);
@@ -254,6 +251,7 @@ export const App: React.FC = () => {
           <StationCommandCockpit
             sectors={sectors}
             incidents={incidents}
+            trains={trains}
             health={stationHealth}
             events={events}
             onResolveWithOtp={handleResolveWithOtp}

@@ -4,14 +4,10 @@ import {
   Users, 
   AlertTriangle, 
   Train as TrainIcon, 
-  ShieldAlert, 
-  MapPin, 
+  Sparkles, 
   ArrowRight, 
-  Zap, 
-  UserCheck, 
-  Sparkles,
-  Layers,
-  Clock
+  Send,
+  UserCheck
 } from 'lucide-react';
 
 interface InteractiveStationMapProps {
@@ -37,9 +33,13 @@ export const InteractiveStationMap: React.FC<InteractiveStationMapProps> = ({
 }) => {
 
   const getSectorStatusColor = (status: string, density: number) => {
-    if (status === 'CRITICAL' || density > 80) return 'bg-rose-950/70 border-rose-600 text-rose-300 ring-1 ring-rose-500/50 shadow-lg shadow-rose-950/40';
-    if (status === 'WARNING' || density > 60) return 'bg-amber-950/60 border-amber-600 text-amber-300 ring-1 ring-amber-500/40';
-    return 'bg-slate-900/90 border-slate-700 text-emerald-400 hover:border-slate-500';
+    if (status === 'CRITICAL' || density > 80) {
+      return 'bg-rose-950/70 border-rose-600 text-rose-200 ring-1 ring-rose-500 shadow-md shadow-rose-950/50';
+    }
+    if (status === 'WARNING' || density > 60) {
+      return 'bg-amber-950/60 border-amber-600 text-amber-200 ring-1 ring-amber-500/50';
+    }
+    return 'bg-slate-900/90 border-slate-700 text-emerald-300 hover:border-slate-500';
   };
 
   const getDensityBarColor = (density: number) => {
@@ -48,7 +48,6 @@ export const InteractiveStationMap: React.FC<InteractiveStationMapProps> = ({
     return 'bg-emerald-500';
   };
 
-  // Group sectors by Platform
   const p1Sectors = sectors.filter(s => s.platformNumber === '1');
   const p2Sectors = sectors.filter(s => s.platformNumber === '2');
   const p3Sectors = sectors.filter(s => s.platformNumber === '3');
@@ -65,7 +64,7 @@ export const InteractiveStationMap: React.FC<InteractiveStationMapProps> = ({
       <div className="p-3 bg-slate-900/80 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2 z-10">
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-            Station Layout View:
+            Map Mode:
           </span>
           <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
             <button
@@ -77,7 +76,7 @@ export const InteractiveStationMap: React.FC<InteractiveStationMapProps> = ({
               }`}
             >
               <Users className="w-3.5 h-3.5" />
-              ● Crowd Density
+              ● Crowd
             </button>
             <button
               onClick={() => setMapMode('INCIDENTS')}
@@ -88,7 +87,7 @@ export const InteractiveStationMap: React.FC<InteractiveStationMapProps> = ({
               }`}
             >
               <AlertTriangle className="w-3.5 h-3.5" />
-              ⚠️ Incidents & Safety
+              ⚠ Incidents
             </button>
             <button
               onClick={() => setMapMode('OPERATIONS')}
@@ -99,32 +98,36 @@ export const InteractiveStationMap: React.FC<InteractiveStationMapProps> = ({
               }`}
             >
               <TrainIcon className="w-3.5 h-3.5" />
-              🚆 Operations & Trains
+              🚆 Operations
             </button>
           </div>
         </div>
 
-        {/* Legend */}
-        <div className="flex items-center gap-3 text-xs text-slate-300">
-          <div className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-            <span className="text-[11px]">Normal (&lt;60%)</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-            <span className="text-[11px]">Warning (60-80%)</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
-            <span className="text-[11px]">Critical (&gt;80%)</span>
-          </div>
+        {/* Clean Floating Legend */}
+        <div className="bg-slate-950/90 border border-slate-800 px-3 py-1 rounded-xl flex items-center gap-3 text-[11px] text-slate-300 font-mono shadow-md">
+          <span className="text-slate-500 font-bold uppercase text-[10px]">LIVE MAP:</span>
+          <span className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-emerald-500" /> Normal
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-amber-500" /> Warning
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" /> Critical
+          </span>
+          <span className="flex items-center gap-1 text-slate-400">
+            🚆 Train
+          </span>
+          <span className="flex items-center gap-1 text-rose-400">
+            ⚠ Incident
+          </span>
         </div>
       </div>
 
       {/* Main Station Schematic Map Canvas */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         
-        {/* Foot Overbridge North (FOB-1) Connector */}
+        {/* Foot Overbridge North (FOB-1) */}
         {fobNorth && (
           <div 
             onClick={() => onSelectSector(fobNorth)}
@@ -149,7 +152,7 @@ export const InteractiveStationMap: React.FC<InteractiveStationMapProps> = ({
           </div>
         )}
 
-        {/* PLATFORM 1 & 2 TRACK CORRIDOR (Island Platforms) */}
+        {/* PLATFORM 1 & 2 TRACK CORRIDOR */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           
           {/* PLATFORM 1 */}
@@ -161,7 +164,6 @@ export const InteractiveStationMap: React.FC<InteractiveStationMapProps> = ({
                 <span className="text-xs text-slate-400 font-semibold">(Up Main Line)</span>
               </div>
               
-              {/* Operations Mode Train Docked */}
               {mapMode === 'OPERATIONS' && (
                 <div className="flex items-center gap-1.5 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800 text-xs">
                   <TrainIcon className="w-3.5 h-3.5 text-blue-400" />
@@ -196,7 +198,6 @@ export const InteractiveStationMap: React.FC<InteractiveStationMapProps> = ({
                     <span>Cap: {sec.capacity}</span>
                   </div>
 
-                  {/* Incidents Pin Overlay */}
                   {mapMode === 'INCIDENTS' && sec.activeIncidentsCount > 0 && (
                     <div className="mt-2 pt-1.5 border-t border-slate-800 flex items-center justify-between">
                       <span className="text-[10px] text-rose-400 font-bold flex items-center gap-1">
@@ -271,7 +272,7 @@ export const InteractiveStationMap: React.FC<InteractiveStationMapProps> = ({
                     <div className="mt-2 pt-1.5 border-t border-rose-900/60 flex items-center justify-between">
                       <span className="text-[10px] text-amber-300 font-bold flex items-center gap-1">
                         <Sparkles className="w-3 h-3 text-amber-400" />
-                        AI Reroute Ready
+                        AI Reroute
                       </span>
                       <button 
                         onClick={(e) => {
@@ -280,7 +281,7 @@ export const InteractiveStationMap: React.FC<InteractiveStationMapProps> = ({
                         }}
                         className="text-[10px] bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-2 py-0.5 rounded shadow-sm transition"
                       >
-                        Divert to P3 &rarr;
+                        Divert &rarr;
                       </button>
                     </div>
                   )}
@@ -291,7 +292,7 @@ export const InteractiveStationMap: React.FC<InteractiveStationMapProps> = ({
 
         </div>
 
-        {/* MAIN CONCOURSE & PASSENGER WAITING HUB */}
+        {/* MAIN CONCOURSE */}
         {concourse && (
           <div
             onClick={() => onSelectSector(concourse)}
@@ -314,7 +315,7 @@ export const InteractiveStationMap: React.FC<InteractiveStationMapProps> = ({
           </div>
         )}
 
-        {/* PLATFORM 3 & 4 TRACK CORRIDOR */}
+        {/* PLATFORM 3 & 4 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           
           {/* PLATFORM 3 */}
@@ -405,7 +406,7 @@ export const InteractiveStationMap: React.FC<InteractiveStationMapProps> = ({
 
         </div>
 
-        {/* Foot Overbridge South (FOB-2) & Gate 1 */}
+        {/* Footbridges South & Gate 1 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {fobSouth && (
             <div
