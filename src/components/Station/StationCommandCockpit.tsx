@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { StationSector, StationIncident, LiveActivityEvent, StationHealthData, MapDisplayMode } from '../../types/stationCommand';
 import { Train } from '../../types/railway';
 import { StationCommandHeader } from './StationCommandHeader';
@@ -74,8 +74,12 @@ export const StationCommandCockpit: React.FC<StationCommandCockpitProps> = ({
 
       </div>
 
-      {/* 3. Bottom Live Activity Timeline */}
-      <LiveActivityTicker events={events} />
+      {/* 3. Bottom Live Activity Timeline (Clickable to focus map) */}
+      <LiveActivityTicker 
+        events={events} 
+        sectors={sectors}
+        onSelectSector={(sec) => setSelectedSector(sec)}
+      />
 
       {/* OTP Verification Modal */}
       <IncidentOtpModal

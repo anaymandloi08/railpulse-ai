@@ -1,4 +1,4 @@
-import { StationSector, StationIncident, LiveActivityEvent, StationHealthData } from '../types/stationCommand';
+﻿station_data_code = """import { StationSector, StationIncident, LiveActivityEvent, StationHealthData } from '../types/stationCommand';
 
 export const INITIAL_STATION_HEALTH: StationHealthData = {
   overallScore: 78,
@@ -182,3 +182,8 @@ export const INITIAL_LIVE_EVENTS: LiveActivityEvent[] = [
   { id: 'EVT-4', time: '19:35', type: 'OFFICER', message: 'RPF Officer Kumar assigned to Platform 1 safety ticket' },
   { id: 'EVT-5', time: '19:31', type: 'NORMAL', message: 'Platform 4 returned to normal occupancy (61%)' }
 ];
+"""
+
+with open("src/data/mockStationData.ts", "w", encoding="utf-8") as f:
+    f.write(station_data_code)
+print("mockStationData.ts updated with consistent math and non-duplicate alerts")

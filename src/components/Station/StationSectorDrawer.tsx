@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { StationSector, StationIncident } from '../../types/stationCommand';
 import { 
   X, 
@@ -7,10 +7,10 @@ import {
   Sparkles, 
   ShieldCheck, 
   ArrowRight, 
-  UserCheck, 
-  Send, 
-  Video 
+  CheckCircle2, 
+  Send 
 } from 'lucide-react';
+import confetti from 'canvas-confetti';
 
 interface StationSectorDrawerProps {
   sector: StationSector | null;
@@ -27,9 +27,24 @@ export const StationSectorDrawer: React.FC<StationSectorDrawerProps> = ({
   incidents,
   onTriggerCrowdDivert
 }) => {
+  const [divertExecuted, setDivertExecuted] = useState<boolean>(false);
+
   if (!sector) return null;
 
   const sectorIncidents = incidents.filter(i => i.sectorId === sector.id && i.status !== 'RESOLVED');
+
+  const handleConfirmDivert = () => {
+    setDivertExecuted(true);
+    confetti({
+      particleCount: 70,
+      spread: 60,
+      origin: { y: 0.6 }
+    });
+    onTriggerCrowdDivert(sector.id, 'P3-A');
+    setTimeout(() => {
+      onClose();
+    }, 1500);
+  };
 
   return (
     <div className="fixed inset-y-0 right-0 w-full max-w-sm bg-slate-900/98 backdrop-blur-xl border-l border-slate-800 z-50 shadow-2xl flex flex-col animate-in slide-in-from-right duration-200">
@@ -59,7 +74,7 @@ export const StationSectorDrawer: React.FC<StationSectorDrawerProps> = ({
 
       <div className="p-4 space-y-4 flex-1 overflow-y-auto text-xs">
         
-        {/* Crowd Density Gauge */}
+        {/* Crowd Capacity Card */}
         <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
           <div className="flex justify-between items-center text-xs">
             <span className="text-slate-400 font-semibold flex items-center gap-1">
@@ -81,31 +96,48 @@ export const StationSectorDrawer: React.FC<StationSectorDrawerProps> = ({
           </div>
 
           <div className="flex justify-between text-[11px] text-slate-400 font-mono">
-            <span>Density: <b className="text-white">{sector.crowdDensity}%</b></span>
-            <span>Capacity Headroom: {Math.max(0, sector.capacity - sector.passengerCount)} pax</span>
+            <span>Occupancy: <b className="text-white">{sector.crowdDensity}%</b></span>
+            <span>Headroom: {Math.max(0, sector.capacity - sector.passengerCount)} pax</span>
           </div>
         </div>
 
-        {/* AI Action Advisory */}
-        <div className="bg-indigo-950/40 border border-indigo-500/40 p-3.5 rounded-xl space-y-2">
-          <div className="flex items-center gap-1.5 text-indigo-300 font-bold">
-            <Sparkles className="w-4 h-4 text-amber-400" />
-            <span>AI Sector Recommendation</span>
+        {/* AI Action Showcase State */}
+        <div className="bg-gradient-to-br from-slate-950 to-indigo-950/60 border border-indigo-500/40 p-4 rounded-xl space-y-2.5 shadow-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5 text-indigo-300 font-bold">
+              <Sparkles className="w-4 h-4 text-amber-400" />
+              <span>AI Recommended Action</span>
+            </div>
+            <span className="text-[10px] bg-indigo-500/20 text-indigo-300 font-mono font-bold px-1.5 py-0.2 rounded">
+              91% Confidence
+            </span>
           </div>
-          <p className="text-slate-300 text-xs leading-relaxed">
-            {sector.aiRecommendation}
-          </p>
 
-          {sector.status === 'CRITICAL' && (
+          <div className="bg-slate-900/90 p-2.5 rounded-lg border border-slate-800 space-y-1.5 text-xs">
+            <div className="flex items-center justify-between font-bold text-white">
+              <span>Redirect passengers from:</span>
+              <span className="text-cyan-300 font-mono">Platform 2 &rarr; Platform 3</span>
+            </div>
+            <div className="text-[11px] text-slate-300">
+              <b>Reason:</b> Platform 2 projected to exceed safe capacity in <b>8 min</b>
+            </div>
+            <div className="text-[11px] text-emerald-400 font-semibold pt-1 border-t border-slate-800">
+              <b>Expected impact:</b> &minus;35% congestion relief
+            </div>
+          </div>
+
+          {divertExecuted ? (
+            <div className="bg-emerald-950 border border-emerald-500/50 p-2.5 rounded-lg flex items-center gap-2 text-emerald-300 font-bold">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <span>Diversion Executed & Marshals Deployed!</span>
+            </div>
+          ) : (
             <button
-              onClick={() => {
-                onTriggerCrowdDivert(sector.id, 'P3-A');
-                onClose();
-              }}
-              className="w-full mt-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-1.5 px-3 rounded-lg flex items-center justify-center gap-1.5 shadow-md transition"
+              onClick={handleConfirmDivert}
+              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 shadow-md transition"
             >
               <Send className="w-3.5 h-3.5" />
-              Execute Crowd Divert to Platform 3
+              Confirm Crowd Diversion
             </button>
           )}
         </div>
@@ -114,7 +146,7 @@ export const StationSectorDrawer: React.FC<StationSectorDrawerProps> = ({
         {sectorIncidents.length > 0 && (
           <div className="space-y-2">
             <div className="text-xs font-bold text-slate-300 uppercase">
-              Active Sector Incidents ({sectorIncidents.length})
+              Active Sector Tickets ({sectorIncidents.length})
             </div>
             {sectorIncidents.map(inc => (
               <div key={inc.id} className="p-3 bg-slate-950 border border-rose-900/50 rounded-xl space-y-2">
@@ -127,7 +159,7 @@ export const StationSectorDrawer: React.FC<StationSectorDrawerProps> = ({
                   }}
                   className="w-full bg-rose-600/30 hover:bg-rose-600/50 text-rose-300 border border-rose-500/40 font-bold py-1 px-2 rounded text-xs transition"
                 >
-                  Open OTP Verification 🔐
+                  Verify Passenger OTP 🔐
                 </button>
               </div>
             ))}
