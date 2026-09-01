@@ -1,6 +1,6 @@
 import React, { useState, useEffect, Component, ErrorInfo, ReactNode } from 'react';
-import { Train, Alert } from './types/railway';
-import { INITIAL_TRAINS, INITIAL_ALERTS } from './data/mockTrains';
+import { Train, TrainStop } from './types/railway';
+import { INITIAL_TRAINS } from './data/mockTrains';
 import { advanceSimulationStep } from './services/simulationEngine';
 import { RailwayMap } from './components/Map/RailwayMap';
 import { TrainDetailDrawer } from './components/Trains/TrainDetailDrawer';
@@ -25,7 +25,9 @@ import {
   Play,
   Pause,
   Activity,
-  SlidersHorizontal
+  X,
+  ShieldCheck,
+  Check
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -74,11 +76,12 @@ export const App: React.FC = () => {
   const [trains, setTrains] = useState<Train[]>(INITIAL_TRAINS);
   const [selectedTrain, setSelectedTrain] = useState<Train>(INITIAL_TRAINS[0]);
   const [drawerTrain, setDrawerTrain] = useState<Train | null>(null);
-  const [activeTab, setActiveTab] = useState<'tracker' | 'predictor' | 'sandbox'>('tracker');
+  const [activeTab, setActiveTab] = useState<'tracking' | 'prediction' | 'whatif'>('tracking');
   const [simSpeed, setSimSpeed] = useState<number>(1);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [currentTime, setCurrentTime] = useState<string>('');
+  const [selectedStopModal, setSelectedStopModal] = useState<TrainStop | null>(null);
 
   useEffect(() => {
     const updateTime = () => {
@@ -192,51 +195,51 @@ export const App: React.FC = () => {
                   RAILPULSE AI
                 </h1>
                 <span className="bg-blue-500/20 border border-blue-400/30 text-blue-300 text-[10px] font-black px-2 py-0.2 rounded-full">
-                  DYNAMIC ETA ENGINE
+                  DYNAMIC ETA PREDICTION
                 </span>
               </div>
               <p className="text-[11px] text-slate-400 font-medium hidden sm:block">
-                Indian Railways Real-Time Train Tracking & AI-Predicted Arrival Time
+                Indian Railways Real-Time Train Tracking & Dynamic Arrival Forecast
               </p>
             </div>
           </div>
 
-          {/* Navigation Tabs */}
+          {/* Clean 3-Tab Navigation */}
           <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-bold">
             <button
-              onClick={() => setActiveTab('tracker')}
+              onClick={() => setActiveTab('tracking')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
-                activeTab === 'tracker'
+                activeTab === 'tracking'
                   ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
               <TrainIcon className="w-3.5 h-3.5" />
-              <span>Live Train Tracker</span>
+              <span>Live Tracking</span>
             </button>
 
             <button
-              onClick={() => setActiveTab('predictor')}
+              onClick={() => setActiveTab('prediction')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
-                activeTab === 'predictor'
+                activeTab === 'prediction'
                   ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
               <Cpu className="w-3.5 h-3.5" />
-              <span>AI Delay Diagnostics</span>
+              <span>ETA Prediction</span>
             </button>
 
             <button
-              onClick={() => setActiveTab('sandbox')}
+              onClick={() => setActiveTab('whatif')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
-                activeTab === 'sandbox'
+                activeTab === 'whatif'
                   ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
               <Zap className="w-3.5 h-3.5 text-amber-400" />
-              <span>"What-If" Dispatch Fix</span>
+              <span>What-If</span>
             </button>
           </div>
 
@@ -279,7 +282,7 @@ export const App: React.FC = () => {
 
         </header>
 
-        {/* 2. TOP KPI BAR */}
+        {/* 2. TOP KPI BAR: TECHNICALLY DEFENSIBLE METRICS */}
         <div className="bg-slate-900/70 border-b border-slate-800 px-4 py-2 grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
           <div className="flex items-center gap-2">
             <span className="text-slate-400 uppercase font-bold text-[10px]">Active Fleet:</span>
@@ -290,21 +293,21 @@ export const App: React.FC = () => {
             <span className="font-mono font-black text-rose-400 text-sm">{delayedCount} Trains</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-slate-400 uppercase font-bold text-[10px]">Average Network Delay:</span>
+            <span className="text-slate-400 uppercase font-bold text-[10px]">Avg Network Delay:</span>
             <span className="font-mono font-black text-amber-400 text-sm">+{avgDelay} min</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-slate-400 uppercase font-bold text-[10px]">AI Prediction Accuracy:</span>
-            <span className="font-mono font-black text-cyan-400 text-sm">96.4% (&plusmn;1.4m MAE)</span>
+            <span className="text-slate-400 uppercase font-bold text-[10px]">Validation MAE:</span>
+            <span className="font-mono font-black text-cyan-400 text-sm">&plusmn;1.4 min <span className="text-[10px] text-slate-400 font-normal">(91% Conf)</span></span>
           </div>
         </div>
 
         {/* 3. MAIN WORKSPACE */}
         <main className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
           
-          {activeTab === 'tracker' && (
+          {activeTab === 'tracking' && (
             <>
-              {/* LEFT: TRAIN FLEET SELECTOR */}
+              {/* LEFT: TRAIN FLEET SELECTOR (Delay-Prioritized) */}
               <div className="w-full lg:w-[320px] bg-slate-950 border-r border-slate-800 flex flex-col h-full z-10">
                 <div className="p-3 border-b border-slate-800 space-y-2 bg-slate-900/60">
                   <div className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center justify-between">
@@ -337,13 +340,13 @@ export const App: React.FC = () => {
                       >
                         <div className="flex items-center justify-between">
                           <span className="font-mono font-black text-xs text-white">TRAIN {train.number}</span>
-                          <span className={`text-[9px] font-black px-1.5 py-0.2 rounded font-mono ${
-                            isHeavy ? 'bg-rose-500/20 text-rose-300' : train.delayMinutes > 5 ? 'bg-amber-500/20 text-amber-300' : 'bg-emerald-500/20 text-emerald-300'
+                          <span className={`text-[10px] font-black px-2 py-0.5 rounded font-mono ${
+                            isHeavy ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : train.delayMinutes > 5 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                           }`}>
-                            {train.delayMinutes > 0 ? `+${train.delayMinutes}m` : 'ON TIME'}
+                            {train.delayMinutes > 0 ? `+${train.delayMinutes} min` : 'ON TIME'}
                           </span>
                         </div>
-                        <div className="text-[11px] font-semibold text-slate-300 truncate mt-0.5">{train.name}</div>
+                        <div className="text-[11px] font-bold text-slate-200 truncate mt-0.5">{train.name}</div>
                         <div className="text-[10px] text-slate-400 flex items-center justify-between mt-1">
                           <span>{train.originCode} &rarr; {train.destinationCode}</span>
                           <span className="font-mono font-bold text-blue-300">{train.speed} km/h</span>
@@ -364,7 +367,7 @@ export const App: React.FC = () => {
                 />
               </div>
 
-              {/* RIGHT: THE PROMINENT DYNAMIC ETA CARD (User's Exact Specification) */}
+              {/* RIGHT: THE PROMINENT DYNAMIC ETA CARD (1-Second Recognition) */}
               <div className="w-full lg:w-[440px] bg-slate-950 border-l border-slate-800 p-4 flex flex-col h-full overflow-y-auto space-y-3.5 z-10">
                 
                 {/* Header */}
@@ -376,16 +379,14 @@ export const App: React.FC = () => {
                         {selectedTrain.category}
                       </span>
                     </div>
-                    <div className="text-xs font-semibold text-slate-300 flex items-center gap-1.5 mt-0.5">
-                      <span>{selectedTrain.origin}</span>
-                      <ArrowRight className="w-3 h-3 text-slate-500" />
-                      <span>{selectedTrain.destination}</span>
+                    <div className="text-xs font-semibold text-slate-300 mt-0.5">
+                      {selectedTrain.name}
                     </div>
                   </div>
                   
-                  <div className="bg-slate-900 border border-slate-800 px-2 py-1 rounded-lg text-right">
+                  <div className="bg-slate-900 border border-slate-800 px-2.5 py-1 rounded-lg text-right">
                     <div className="text-[9px] text-slate-400 uppercase font-bold">Speed</div>
-                    <div className="font-mono font-black text-xs text-white">{selectedTrain.speed} km/h</div>
+                    <div className="font-mono font-black text-xs text-blue-400">{selectedTrain.speed} km/h</div>
                   </div>
                 </div>
 
@@ -407,81 +408,73 @@ export const App: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Scheduled vs AI Dynamic ETA (THE HERO SPECIFICATION) */}
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="bg-slate-900 p-3 rounded-xl border border-slate-800">
-                    <div className="text-[10px] text-slate-400 font-semibold">Scheduled Arrival:</div>
-                    <div className="font-mono text-lg font-black text-slate-300 mt-1">
-                      {selectedTrain.scheduledETA}
-                    </div>
+                {/* VISUAL CENTERPIECE: BOLD DYNAMIC ETA SHOWCASE */}
+                <div className="bg-gradient-to-br from-slate-900 via-blue-950/40 to-slate-900 border border-blue-500/40 p-4 rounded-2xl shadow-xl space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-400 font-semibold">Scheduled Arrival:</span>
+                    <span className="font-mono font-bold text-slate-300 text-sm">{selectedTrain.scheduledETA}</span>
                   </div>
 
-                  <div className="bg-gradient-to-br from-blue-950/80 to-indigo-950/80 p-3 rounded-xl border border-blue-500/50 shadow-md">
-                    <div className="text-[10px] text-blue-300 font-bold flex items-center gap-1">
-                      <Cpu className="w-3 h-3 text-cyan-400" />
-                      AI Predicted Arrival:
+                  <div className="pt-2 pb-1 border-t border-slate-800/80 text-center">
+                    <div className="text-[10px] uppercase tracking-widest text-cyan-400 font-black flex items-center justify-center gap-1">
+                      <Cpu className="w-3.5 h-3.5" />
+                      AI Predicted Dynamic Arrival
                     </div>
-                    <div className="font-mono text-lg font-black text-cyan-300 mt-1">
+                    <div className="font-mono text-4xl font-black text-white tracking-tight my-1">
                       {selectedTrain.aiPredictedETA}
                     </div>
+                    <div className="flex items-center justify-center gap-2 text-xs">
+                      <span className={`font-mono font-black ${selectedTrain.delayMinutes > 30 ? 'text-rose-400' : selectedTrain.delayMinutes > 5 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                        +{selectedTrain.delayMinutes} min from schedule
+                      </span>
+                      <span className="text-slate-600">•</span>
+                      <span className="text-cyan-300 font-mono font-bold bg-cyan-950/60 border border-cyan-800/40 px-2 py-0.2 rounded">
+                        {selectedTrain.aiInsights.confidence}% Confidence
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Delay Risk Visual Bar */}
+                  <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs">
+                    <span className="text-slate-400 font-semibold">Delay Risk:</span>
+                    <div className="flex items-center gap-2 font-mono">
+                      <span className={
+                        selectedTrain.delayRisk === 'HIGH' || selectedTrain.delayRisk === 'CRITICAL' ? 'text-rose-500' :
+                        selectedTrain.delayRisk === 'MEDIUM' ? 'text-amber-500' : 'text-emerald-500'
+                      }>
+                        {selectedTrain.delayRisk === 'HIGH' || selectedTrain.delayRisk === 'CRITICAL' ? '████████░░' :
+                         selectedTrain.delayRisk === 'MEDIUM' ? '█████░░░░░' : '██░░░░░░░░'}
+                      </span>
+                      <span className={`font-black uppercase text-[10px] ${
+                        selectedTrain.delayRisk === 'HIGH' || selectedTrain.delayRisk === 'CRITICAL' ? 'text-rose-400' :
+                        selectedTrain.delayRisk === 'MEDIUM' ? 'text-amber-400' : 'text-emerald-400'
+                      }`}>
+                        {selectedTrain.delayRisk}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Delay & Confidence */}
-                <div className="flex items-center justify-between px-1 text-xs">
-                  <div>
-                    <span className="text-slate-400 font-semibold">Delay: </span>
-                    <span className={`font-mono font-black text-base ${
-                      selectedTrain.delayMinutes > 30 ? 'text-rose-400' : selectedTrain.delayMinutes > 5 ? 'text-amber-400' : 'text-emerald-400'
-                    }`}>
-                      {selectedTrain.delayMinutes > 0 ? `+${selectedTrain.delayMinutes} min` : 'ON TIME'}
-                    </span>
+                {/* AI Root Cause Diagnostics (Why ETA Changed) */}
+                <div className="bg-slate-900/90 border border-slate-800 p-3.5 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-200">
+                    <div className="flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Why ETA Changed? (Attribution)</span>
+                    </div>
+                    <span className="text-[10px] text-slate-400 font-normal">Real-time Factors</span>
                   </div>
-                  <div>
-                    <span className="text-slate-400 font-semibold">Confidence: </span>
-                    <span className="font-mono font-bold text-xs text-cyan-400 bg-cyan-950/60 border border-cyan-800/40 px-2 py-0.5 rounded">
-                      {selectedTrain.aiInsights.confidence}%
-                    </span>
-                  </div>
-                </div>
 
-                {/* Delay Risk Visual Bar */}
-                <div className="bg-slate-900 p-2.5 rounded-xl border border-slate-800 space-y-1">
-                  <div className="flex justify-between text-xs font-semibold">
-                    <span className="text-slate-400">Delay Risk:</span>
-                    <span className={`font-black text-xs uppercase ${
-                      selectedTrain.delayRisk === 'HIGH' || selectedTrain.delayRisk === 'CRITICAL' ? 'text-rose-400' :
-                      selectedTrain.delayRisk === 'MEDIUM' ? 'text-amber-400' : 'text-emerald-400'
-                    }`}>
-                      {selectedTrain.delayRisk}
-                    </span>
-                  </div>
-                  <div className="font-mono text-base tracking-tighter flex items-center justify-between">
-                    <span className={
-                      selectedTrain.delayRisk === 'HIGH' || selectedTrain.delayRisk === 'CRITICAL' ? 'text-rose-500' :
-                      selectedTrain.delayRisk === 'MEDIUM' ? 'text-amber-500' : 'text-emerald-500'
-                    }>
-                      {selectedTrain.delayRisk === 'HIGH' || selectedTrain.delayRisk === 'CRITICAL' ? '████████░░' :
-                       selectedTrain.delayRisk === 'MEDIUM' ? '█████░░░░░' : '██░░░░░░░░'}
-                    </span>
-                    <span className="text-[11px] text-slate-400 font-mono">{selectedTrain.aiInsights.riskScore} / 10</span>
-                  </div>
-                </div>
-
-                {/* AI Root Cause Diagnostics (Why the ETA changed) */}
-                <div className="bg-slate-900/90 border border-slate-800 p-3 rounded-xl space-y-2">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-200">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Why ETA Changed (Feature Attribution):</span>
-                  </div>
-                  <div className="space-y-1.5 text-[11px]">
+                  <div className="space-y-1.5 text-xs">
                     {selectedTrain.aiInsights.breakdown.map((item, idx) => (
-                      <div key={idx} className="bg-slate-950 p-2 rounded-lg border border-slate-800/80">
-                        <div className="flex justify-between text-slate-300 font-semibold">
-                          <span>{item.factor}</span>
-                          <span className="text-amber-400 font-mono font-bold">+{item.impactMinutes}m</span>
+                      <div key={idx} className="bg-slate-950 p-2 rounded-lg border border-slate-800/80 flex items-start justify-between gap-2">
+                        <div>
+                          <div className="font-semibold text-slate-200 text-[11px]">{item.factor}</div>
+                          <div className="text-[10px] text-slate-400 mt-0.5">{item.description}</div>
                         </div>
-                        <div className="text-[10px] text-slate-400 mt-0.5">{item.description}</div>
+                        <span className="text-amber-400 font-mono font-bold text-xs shrink-0">
+                          +{item.impactMinutes}m
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -502,13 +495,13 @@ export const App: React.FC = () => {
             </>
           )}
 
-          {activeTab === 'predictor' && (
+          {activeTab === 'prediction' && (
             <div className="w-full h-full overflow-y-auto">
               <DelayPredictionEngine trains={trains} />
             </div>
           )}
 
-          {activeTab === 'sandbox' && (
+          {activeTab === 'whatif' && (
             <div className="w-full h-full overflow-y-auto">
               <DecisionSupportSandbox trains={trains} />
             </div>
@@ -518,31 +511,98 @@ export const App: React.FC = () => {
           <TrainDetailDrawer
             train={drawerTrain}
             onClose={() => setDrawerTrain(null)}
-            onSimulateFix={() => setActiveTab('sandbox')}
+            onSimulateFix={() => setActiveTab('whatif')}
           />
 
         </main>
 
-        {/* 4. BOTTOM TIMETABLE DYNAMIC ETA STRIP */}
+        {/* 4. BOTTOM TIMETABLE: INTERACTIVE DYNAMIC ETA PROPAGATION */}
         <footer className="bg-slate-950 border-t border-slate-800 px-4 py-2 flex items-center gap-3 overflow-x-auto text-xs whitespace-nowrap z-20">
           <div className="flex items-center gap-1.5 text-blue-400 font-bold text-[11px] uppercase tracking-wider shrink-0">
             <Activity className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
-            <span>TRAIN {selectedTrain.number} UPCOMING STOPS DYNAMIC ETA:</span>
+            <span>TRAIN {selectedTrain.number} ROUTE ETA PROPAGATION:</span>
           </div>
 
-          <div className="flex items-center gap-4 text-xs font-mono">
+          <div className="flex items-center gap-2 text-xs font-mono">
             {selectedTrain.routeStops.map((stop, idx) => (
-              <div key={idx} className="flex items-center gap-1.5">
-                <span className="text-slate-400 font-semibold">{stop.stationName}:</span>
-                <span className="text-blue-300 font-bold">{stop.predictedArrival || stop.scheduledArrival}</span>
-                {stop.delayAtStop > 0 && (
-                  <span className="text-rose-400 font-bold text-[10px]">(+{stop.delayAtStop}m)</span>
-                )}
-                {idx < selectedTrain.routeStops.length - 1 && <span className="text-slate-700 ml-2">&rarr;</span>}
-              </div>
+              <React.Fragment key={idx}>
+                <button
+                  onClick={() => setSelectedStopModal(stop)}
+                  className="bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-blue-500/50 px-2.5 py-1 rounded-lg flex items-center gap-1.5 transition text-xs cursor-pointer shadow-sm"
+                  title="Click to view station ETA propagation breakdown"
+                >
+                  <span className="text-slate-300 font-bold">{stop.stationName}</span>
+                  <span className="text-blue-400 font-bold">({stop.predictedArrival || stop.scheduledArrival})</span>
+                  {stop.delayAtStop > 0 && (
+                    <span className="text-rose-400 font-bold text-[10px]">+{stop.delayAtStop}m</span>
+                  )}
+                </button>
+                {idx < selectedTrain.routeStops.length - 1 && <span className="text-slate-700">&rarr;</span>}
+              </React.Fragment>
             ))}
           </div>
         </footer>
+
+        {/* 5. INTERACTIVE STATION STOP INSPECTION MODAL */}
+        {selectedStopModal && (
+          <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+              <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950">
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-blue-400" />
+                  <span className="font-bold text-sm text-white">{selectedStopModal.stationName} ({selectedStopModal.stationCode})</span>
+                </div>
+                <button
+                  onClick={() => setSelectedStopModal(null)}
+                  className="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="p-4 space-y-3 text-xs">
+                <div className="text-slate-400">
+                  Dynamic ETA Propagation for <b>Train {selectedTrain.number} ({selectedTrain.name})</b>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                    <div className="text-[10px] text-slate-400">Scheduled Arrival:</div>
+                    <div className="font-mono text-base font-bold text-slate-200 mt-0.5">{selectedStopModal.scheduledArrival}</div>
+                  </div>
+                  <div className="bg-blue-950/40 p-3 rounded-xl border border-blue-500/40">
+                    <div className="text-[10px] text-blue-300 font-bold">Dynamic Predicted ETA:</div>
+                    <div className="font-mono text-base font-black text-cyan-300 mt-0.5">{selectedStopModal.predictedArrival || selectedStopModal.scheduledArrival}</div>
+                  </div>
+                </div>
+
+                <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1.5 font-mono text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Accumulated Delay:</span>
+                    <span className="text-rose-400 font-bold">+{selectedStopModal.delayAtStop} min</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Scheduled Dwell:</span>
+                    <span className="text-slate-200">{selectedStopModal.dwellMinutes} min</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Predicted Departure:</span>
+                    <span className="text-emerald-400 font-bold">
+                      {selectedStopModal.actualDeparture || selectedStopModal.scheduledDeparture}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setSelectedStopModal(null)}
+                  className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-2 rounded-xl transition"
+                >
+                  Close Stop Inspector
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
     </ErrorBoundary>

@@ -37,7 +37,7 @@ export const RailwayMap: React.FC<RailwayMapProps> = ({
       attributionControl: false
     });
 
-    // Watermark-Free High Contrast Dark Map Tiles (ArcGIS Dark Gray / OpenStreetMap)
+    // Watermark-Free High Contrast Dark Map Tiles (ArcGIS Dark Gray)
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
       maxZoom: 16,
       attribution: 'Esri, DeLorme, NAVTEQ'
@@ -97,7 +97,6 @@ export const RailwayMap: React.FC<RailwayMapProps> = ({
 
     mapInstanceRef.current = map;
 
-    // Handle container resize
     const resizeObserver = new ResizeObserver(() => {
       map.invalidateSize();
     });
@@ -110,7 +109,7 @@ export const RailwayMap: React.FC<RailwayMapProps> = ({
     };
   }, []);
 
-  // 2. Update Train Markers on live simulation tick
+  // 2. Update Train Markers on live simulation tick (Selected train is visually dominant)
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
@@ -134,25 +133,26 @@ export const RailwayMap: React.FC<RailwayMapProps> = ({
         borderColor = '#94a3b8';
       }
 
+      // Dominant styling for selected train
       const iconHtml = `
-        <div style="position: relative; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-          ${isHighDelay ? '<div style="position: absolute; width: 44px; height: 44px; border-radius: 50%; background-color: rgba(239, 68, 68, 0.35); border: 1px solid #ef4444;"></div>' : ''}
-          ${isSelected ? '<div style="position: absolute; width: 46px; height: 46px; border-radius: 50%; border: 2px dashed #38bdf8;"></div>' : ''}
+        <div style="position: relative; width: ${isSelected ? '44px' : '32px'}; height: ${isSelected ? '44px' : '32px'}; display: flex; align-items: center; justify-content: center; cursor: pointer; opacity: ${isSelected ? '1' : '0.75'}; transition: all 0.3s ease;">
+          ${isSelected ? '<div class="pulse-ring" style="position: absolute; width: 54px; height: 54px; border-radius: 50%; background-color: rgba(56, 189, 248, 0.3); border: 2px solid #38bdf8;"></div>' : ''}
+          ${isHighDelay && !isSelected ? '<div style="position: absolute; width: 38px; height: 38px; border-radius: 50%; background-color: rgba(239, 68, 68, 0.35); border: 1px solid #ef4444;"></div>' : ''}
           
           <div style="
-            width: 30px; 
-            height: 30px; 
+            width: ${isSelected ? '36px' : '26px'}; 
+            height: ${isSelected ? '36px' : '26px'}; 
             border-radius: 50%; 
             background: ${bgColor}; 
-            border: 2px solid ${isSelected ? '#ffffff' : borderColor}; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+            border: ${isSelected ? '2.5px solid #ffffff' : '1.5px solid ' + borderColor}; 
+            box-shadow: ${isSelected ? '0 0 16px rgba(56, 189, 248, 0.8)' : '0 2px 6px rgba(0,0,0,0.6)'};
             display: flex;
             align-items: center;
             justify-content: center;
             transform: rotate(${train.heading}deg);
             transition: transform 0.4s ease;
           ">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="${isSelected ? '20' : '14'}" height="${isSelected ? '20' : '14'}" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="m12 2 8 8-8 8-8-8z"/>
               <path d="M12 2v20"/>
             </svg>
@@ -160,16 +160,17 @@ export const RailwayMap: React.FC<RailwayMapProps> = ({
 
           <div style="
             position: absolute; 
-            bottom: -8px; 
-            background: #0f172a; 
-            color: #f8fafc; 
-            font-size: 9px; 
+            bottom: ${isSelected ? '-10px' : '-7px'}; 
+            background: ${isSelected ? '#0284c7' : '#0f172a'}; 
+            color: #ffffff; 
+            font-size: ${isSelected ? '10px' : '8px'}; 
             font-family: monospace; 
-            font-weight: 800; 
-            padding: 0 3px; 
+            font-weight: 900; 
+            padding: 0 4px; 
             border-radius: 4px; 
-            border: 1px solid #334155;
+            border: 1px solid ${isSelected ? '#38bdf8' : '#334155'};
             white-space: nowrap;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.7);
           ">
             ${train.number}
           </div>
@@ -179,9 +180,9 @@ export const RailwayMap: React.FC<RailwayMapProps> = ({
       const trainIcon = L.divIcon({
         html: iconHtml,
         className: 'train-marker-icon',
-        iconSize: [36, 36],
-        iconAnchor: [18, 18],
-        popupAnchor: [0, -18]
+        iconSize: isSelected ? [44, 44] : [32, 32],
+        iconAnchor: isSelected ? [22, 22] : [16, 16],
+        popupAnchor: [0, -20]
       });
 
       let marker = markersRef.current.get(train.id);
@@ -194,9 +195,10 @@ export const RailwayMap: React.FC<RailwayMapProps> = ({
       } else {
         marker.setLatLng([train.currentLat, train.currentLng]);
         marker.setIcon(trainIcon);
+        if (isSelected) marker.setZIndexOffset(1000);
+        else marker.setZIndexOffset(100);
       }
 
-      // Popup content
       const popupHtml = `
         <div style="padding: 4px; max-width: 240px; font-family: sans-serif; color: #fff;">
           <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 4px; margin-bottom: 6px;">
@@ -210,9 +212,10 @@ export const RailwayMap: React.FC<RailwayMapProps> = ({
           <div style="font-weight: bold; font-size: 11px; margin-bottom: 4px;">${train.name}</div>
           <div style="font-size: 10px; color: #94a3b8; margin-bottom: 6px;">${train.origin} &rarr; ${train.destination}</div>
           <div style="background: #090d16; padding: 6px; border-radius: 6px; border: 1px solid #1e293b; font-size: 10px; line-height: 1.5;">
+            <div>Current: <b style="color: #f1f5f9;">${train.currentStation}</b></div>
             <div>Next: <b style="color: #f1f5f9;">${train.nextStation}</b></div>
             <div>Scheduled: <b style="color: #cbd5e1;">${train.scheduledETA}</b></div>
-            <div style="color: #38bdf8;">AI Predicted: <b>${train.aiPredictedETA}</b></div>
+            <div style="color: #38bdf8;">Dynamic ETA: <b>${train.aiPredictedETA}</b></div>
             <div style="color: ${train.delayMinutes > 30 ? '#f43f5e' : train.delayMinutes > 5 ? '#f59e0b' : '#34d399'}; font-weight: bold;">
               Delay: ${train.delayMinutes > 0 ? `+${train.delayMinutes}m` : 'ON TIME'} (${train.aiInsights.confidence}% conf)
             </div>
@@ -223,7 +226,7 @@ export const RailwayMap: React.FC<RailwayMapProps> = ({
     });
   }, [trains, selectedTrain?.id, onSelectTrain]);
 
-  // 3. Highlight full route & pan when train is selected
+  // 3. Highlight full route & pan smoothly when train is selected
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
@@ -234,23 +237,21 @@ export const RailwayMap: React.FC<RailwayMapProps> = ({
     }
 
     if (selectedTrain) {
-      // Draw highlighted route line
       const routeLine = L.polyline(selectedTrain.fullRouteCoordinates, {
         color: '#38bdf8',
-        weight: 4.5,
+        weight: 5,
         opacity: 0.95,
         dashArray: '8, 6'
       }).addTo(map);
 
       selectedRoutePolylineRef.current = routeLine;
 
-      // Pan to train
       map.flyTo([selectedTrain.currentLat, selectedTrain.currentLng], Math.max(map.getZoom(), 7), {
         animate: true,
         duration: 1.0
       });
     }
-  }, [selectedTrain]);
+  }, [selectedTrain?.id]);
 
   return (
     <div className="relative w-full h-full bg-slate-950 overflow-hidden">
@@ -261,8 +262,8 @@ export const RailwayMap: React.FC<RailwayMapProps> = ({
       {/* Legend Overlay */}
       <div className="absolute bottom-4 right-4 z-[400] bg-slate-950/90 backdrop-blur-md border border-slate-800 rounded-xl p-3 text-xs text-slate-300 shadow-2xl space-y-2 hidden md:block max-w-xs pointer-events-auto">
         <div className="font-bold text-white text-[11px] uppercase tracking-wider flex items-center justify-between border-b border-slate-800 pb-1">
-          <span>Corridor Telemetry Legend</span>
-          <span className="text-[10px] text-blue-400">Live GIS</span>
+          <span>Corridor Track Legend</span>
+          <span className="text-[10px] text-blue-400">Live GPS</span>
         </div>
 
         <div className="grid grid-cols-2 gap-2 text-[11px]">
@@ -275,8 +276,8 @@ export const RailwayMap: React.FC<RailwayMapProps> = ({
             <span>Minor (6-30m)</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-            <span>High Risk (&gt;30m)</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
+            <span>Heavy Delay (&gt;30m)</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-slate-500" />
